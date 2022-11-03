@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/tx_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="27dp"
+        android:text="@string/bt_title"
+        android:textColor="@color/tx_title"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/v_bg"
+        app:layout_constraintStart_toStartOf="@+id/v_bg"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <View
+        android:id="@+id/v_bg"
+        android:layout_width="888dp"
+        android:layout_height="558dp"
+        android:background="@drawable/coner_bg"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tx_title">
+
+    </View>
+
+    <TextView
+        android:id="@+id/bt_tip"
+        android:layout_width="840dp"
+        android:layout_height="wrap_content"
+        android:text="@string/bt_tip"
+        android:textColor="#99455667"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toTopOf="@+id/iv_box"
+        app:layout_constraintLeft_toLeftOf="@+id/v_bg"
+        app:layout_constraintRight_toRightOf="@+id/v_bg"
+        app:layout_constraintTop_toTopOf="@+id/v_bg">
+
+    </TextView>
+
+    <ImageView
+        android:id="@+id/iv_box"
+        android:layout_width="538dp"
+        android:layout_height="330dp"
+        android:src="@drawable/remote_box"
+        app:layout_constraintBottom_toTopOf="@+id/v_state"
+        app:layout_constraintLeft_toLeftOf="@+id/v_bg"
+        app:layout_constraintRight_toRightOf="@+id/v_bg"
+        app:layout_constraintTop_toBottomOf="@+id/bt_tip" />
+
+    <com.baoyachi.stepview.HorizontalStepView
+        android:id="@+id/v_state"
+        android:layout_width="560dp"
+        android:layout_height="70dp"
+        app:layout_constraintBottom_toBottomOf="@+id/v_bg"
+        app:layout_constraintLeft_toLeftOf="@+id/iv_box"
+        app:layout_constraintRight_toRightOf="@+id/iv_box"
+        app:layout_constraintTop_toBottomOf="@+id/iv_box" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
