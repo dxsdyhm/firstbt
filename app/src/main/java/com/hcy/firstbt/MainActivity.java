@@ -35,7 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter;
 
     String pin = "0000";  //此处为你要连接的蓝牙设备的初始密钥，一般为1234或0000
-    public static String BT_NAME = "RemoteB016";
+    public static String BT_NAME_DEFAULT = "RemoteC01";
+    public String BT_NAME=BT_NAME_DEFAULT;
     private BluetoothProfile mService = null;
 
     private BroadcastReceiver remoteReceiver=new BroadcastReceiver() {
@@ -58,11 +59,9 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }else if(btDevice.getBondState() == BluetoothDevice.BOND_BONDED){
                         boolean isConnect=isConnect();
-                        Log.e(TAG, "BOND_BONDED isConnect:"+isConnect);
                         if(!isConnect){
                             try {
                                 boolean rem=ClsUtils.removeBond(btDevice.getClass(), btDevice);
-                                Log.e(TAG, "BOND_BONDED rem:"+rem);
                                 if(rem){
                                     ClsUtils.createBond(btDevice.getClass(), btDevice);
                                 }

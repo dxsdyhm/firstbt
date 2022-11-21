@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">firstbt</string>
-    <string name="bt_tip">请把遥控器拿在盒子旁边。同时长按遥控器【音量减】与【确认】键约10秒，然后释放，自动进入配对模式，配对成功如需再次配对，请长按盒子上的圆形配对键进入此页面</string>
+    <string name="bt_tip">请把遥控器拿在盒子旁边。同时长按遥控器【音量-】与【确认】键约10秒，然后释放，自动进入配对模式，配对成功如需再次配对，请长按盒子上的圆形配对键进入此页面</string>
     <string name="bt_title">蓝牙遥控配对</string>
 </resources>

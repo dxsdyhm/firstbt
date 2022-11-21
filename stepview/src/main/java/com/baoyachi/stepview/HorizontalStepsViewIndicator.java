@@ -221,8 +221,6 @@ public class HorizontalStepsViewIndicator extends View
         for(int i = 0; i < mCircleCenterPointPositionList.size(); i++)
         {
             final float currentComplectedXPosition = mCircleCenterPointPositionList.get(i);
-
-
             StepBean stepsBean = mStepBeanList.get(i);
 
             if(stepsBean.getState()==StepBean.STEP_CURRENT){
