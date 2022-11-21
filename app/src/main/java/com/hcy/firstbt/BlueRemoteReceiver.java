@@ -15,7 +15,6 @@ import java.lang.reflect.Method;
 public class BlueRemoteReceiver extends BroadcastReceiver {
     private static String TAG = "BlueRemoteReceiver";
     String pin = "0000";  //此处为你要连接的蓝牙设备的初始密钥，一般为1234或0000
-    private static String BT_NAME = "RemoteB016";
     private BluetoothProfile mService = null;
 
     private BluetoothProfile.ServiceListener mServiceConnection =
@@ -39,7 +38,7 @@ public class BlueRemoteReceiver extends BroadcastReceiver {
         String action = intent.getAction(); //得到action
         if (BluetoothDevice.ACTION_FOUND.equals(action)) {  //发现设备
             BluetoothDevice btDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-            if (btDevice != null && btDevice.getName() != null && btDevice.getName().contains(BT_NAME))//HC-05设备如果有多个，第一个搜到的那个会被尝试。
+            if (btDevice != null && btDevice.getName() != null && btDevice.getName().contains(MainActivity.getBTName()))//HC-05设备如果有多个，第一个搜到的那个会被尝试。
             {
                 Log.e(TAG, btDevice.toString() + "[" + btDevice.getName() + "]");
                 //todo 12 已配对，未连接是否需要处理
@@ -58,7 +57,7 @@ public class BlueRemoteReceiver extends BroadcastReceiver {
         } else if (action.equals(BluetoothDevice.ACTION_PAIRING_REQUEST)) {
             BluetoothDevice btDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             Log.i(TAG, "ACTION_PAIRING_REQUEST ：" + btDevice.getName());
-            if (btDevice != null && btDevice.getName() != null && btDevice.getName().contains(BT_NAME)) {
+            if (btDevice != null && btDevice.getName() != null && btDevice.getName().contains(MainActivity.getBTName())) {
                 //abortBroadcast();
                 try {
                     Bundle extras = intent.getExtras();

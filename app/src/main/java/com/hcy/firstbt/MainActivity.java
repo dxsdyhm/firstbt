@@ -164,6 +164,7 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("MissingPermission")
     private boolean startScan() {
+        BT_NAME=getBTName();
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
             Log.i(TAG,"No bluetooth device!");
@@ -298,5 +299,13 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public static String getBTName(){
+        String s= ReflectUtils.reflect("android.os.SystemProperties").method("get","persist.sys.remotebt").get();
+        if(s!=null&&s.length()>0){
+            return s;
+        }
+        return BT_NAME_DEFAULT;
     }
 }
