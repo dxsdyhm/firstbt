@@ -222,7 +222,7 @@ public class HorizontalStepsViewIndicator extends View
         {
             final float currentComplectedXPosition = mCircleCenterPointPositionList.get(i);
             StepBean stepsBean = mStepBeanList.get(i);
-
+//            Log.e("dxsTest","stepsBean:"+stepsBean.getName()+"  "+stepsBean.getState());
             if(stepsBean.getState()==StepBean.STEP_CURRENT){
                 float dub_radiu=mCircleRadius*3;
                 Rect rect = new Rect((int) (currentComplectedXPosition - dub_radiu), (int) (mCenterY - dub_radiu), (int) (currentComplectedXPosition + dub_radiu), (int) (mCenterY + dub_radiu));

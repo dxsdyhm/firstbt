@@ -38,7 +38,7 @@ public class BlueRemoteReceiver extends BroadcastReceiver {
         String action = intent.getAction(); //得到action
         if (BluetoothDevice.ACTION_FOUND.equals(action)) {  //发现设备
             BluetoothDevice btDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-            if (btDevice != null && btDevice.getName() != null && btDevice.getName().contains(MainActivity.getBTName()))//HC-05设备如果有多个，第一个搜到的那个会被尝试。
+            if (btDevice != null && btDevice.getName() != null && MainActivity.isLegalRemote(btDevice.getName()))//HC-05设备如果有多个，第一个搜到的那个会被尝试。
             {
                 Log.e(TAG, btDevice.toString() + "[" + btDevice.getName() + "]");
                 //todo 12 已配对，未连接是否需要处理
@@ -57,7 +57,7 @@ public class BlueRemoteReceiver extends BroadcastReceiver {
         } else if (action.equals(BluetoothDevice.ACTION_PAIRING_REQUEST)) {
             BluetoothDevice btDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             Log.i(TAG, "ACTION_PAIRING_REQUEST ：" + btDevice.getName());
-            if (btDevice != null && btDevice.getName() != null && btDevice.getName().contains(MainActivity.getBTName())) {
+            if (btDevice != null && btDevice.getName() != null && MainActivity.isLegalRemote(btDevice.getName())) {
                 //abortBroadcast();
                 try {
                     Bundle extras = intent.getExtras();

@@ -41,7 +41,7 @@ public class AotuPariReceiver extends BroadcastReceiver {
             boolean hasBounded=false;
             for(BluetoothDevice bt:devices){
                 Log.e("dxsTest","bt:"+bt.getName()+" bound:"+bt.getBondState()+"  type:"+bt.getType());
-                if(MainActivity.getBTName().equals(bt.getName())&&bt.getBondState()==BluetoothDevice.BOND_BONDED){
+                if(MainActivity.isLegalRemote(bt.getName())&&bt.getBondState()==BluetoothDevice.BOND_BONDED){
                     hasBounded=true;
                     break;
                 }

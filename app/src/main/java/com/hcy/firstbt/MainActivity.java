@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.hardware.input.InputManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -29,26 +30,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private static String TAG ="MainActivity";
+    private static String TAG = "MainActivity";
     protected HorizontalStepView stepView;
     //private BlueRemoteReceiver remoteReceiver;
     private BluetoothAdapter mBluetoothAdapter;
 
     String pin = "0000";  //此处为你要连接的蓝牙设备的初始密钥，一般为1234或0000
     public static String BT_NAME_DEFAULT = "RemoteC01";
-    public String BT_NAME=BT_NAME_DEFAULT;
+    public String BT_NAME = BT_NAME_DEFAULT;
     private BluetoothProfile mService = null;
 
-    private BroadcastReceiver remoteReceiver=new BroadcastReceiver() {
+    private BroadcastReceiver remoteReceiver = new BroadcastReceiver() {
         @SuppressLint("MissingPermission")
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction(); //得到action
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {  //发现设备
                 BluetoothDevice btDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                if (btDevice != null && btDevice.getName() != null && btDevice.getName().contains(BT_NAME))//HC-05设备如果有多个，第一个搜到的那个会被尝试。
+                if (btDevice != null && btDevice.getName() != null && isLegalRemote(btDevice.getName()))//HC-05设备如果有多个，第一个搜到的那个会被尝试。
                 {
-                    Log.e(TAG, btDevice.toString() + "[" + btDevice.getName() + "]"+" state:"+btDevice.getBondState());
+                    Log.e(TAG, btDevice.toString() + "[" + btDevice.getName() + "]" + " state:" + btDevice.getBondState());
                     //todo 12 已配对，未连接是否需要处理 已配对的也配对（后果未知）
                     if (btDevice.getBondState() == BluetoothDevice.BOND_NONE) {
                         try {
@@ -57,17 +58,14 @@ public class MainActivity extends AppCompatActivity {
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                    }else if(btDevice.getBondState() == BluetoothDevice.BOND_BONDED){
-                        boolean isConnect=isConnect();
-                        if(!isConnect){
-                            try {
-                                boolean rem=ClsUtils.removeBond(btDevice.getClass(), btDevice);
-                                if(rem){
-                                    ClsUtils.createBond(btDevice.getClass(), btDevice);
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                    } else if (btDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
+                        boolean isConnect = isConnect();
+                        Log.i(TAG, "find " + btDevice.getName() + " isConnect :" + isConnect);
+                        if (!isConnect) {
+                            connect(btDevice);
+                        } else {
+                            setStep(3);
+                            stopMyself();
                         }
                     } else {
                         Log.i(TAG, "find " + btDevice.getName() + " but state :" + btDevice.getBondState());
@@ -76,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else if (action.equals(BluetoothDevice.ACTION_PAIRING_REQUEST)) {
                 BluetoothDevice btDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                if (btDevice != null && btDevice.getName() != null && btDevice.getName().contains(BT_NAME)) {
+                if (btDevice != null && btDevice.getName() != null && isLegalRemote(btDevice.getName())) {
                     abortBroadcast();
                     try {
                         //1.确认配对
@@ -84,9 +82,7 @@ public class MainActivity extends AppCompatActivity {
                         boolean ret = ClsUtils.setPin(btDevice.getClass(), btDevice, pin);
                         Log.e(TAG, "ret:" + ret);
                         if (ret) {
-                            BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
-                            setStep(2);
-                            connected(btDevice);
+                            connect(btDevice);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -111,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onServiceConnected(int profile, BluetoothProfile proxy) {
-                    Log.w(TAG, "Service onServiceConnected:"+profile);
+                    Log.w(TAG, "Service onServiceConnected:" + profile);
                     registerInputMethodMonitor();
                     mService = proxy;
                 }
@@ -127,9 +123,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void initUI() {
         setStep(0);
-        if(startScan()){
+        if (startScan()) {
             setStep(1);
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void connect(BluetoothDevice btDevice){
+        BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+        setStep(2);
+        connected(btDevice);
     }
 
     @Override
@@ -148,12 +151,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if(remoteReceiver!=null){
+        if (remoteReceiver != null) {
             unregisterReceiver(remoteReceiver);
         }
     }
 
-    private void registRe(){
+    private void registRe() {
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
@@ -164,25 +167,25 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("MissingPermission")
     private boolean startScan() {
-        BT_NAME=getBTName();
+        BT_NAME = getBTName();
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
-            Log.i(TAG,"No bluetooth device!");
+            Log.i(TAG, "No bluetooth device!");
             return false;
         } else {
-            Log.i(TAG,"Bluetooth device exits!");
+            Log.i(TAG, "Bluetooth device exits!");
             if (!mBluetoothAdapter.isEnabled()) {
                 mBluetoothAdapter.enable();
             }
             if (!BluetoothAdapter.getDefaultAdapter().getProfileProxy(this, mServiceConnection,
                     4/*BluetoothProfile.HID_HOST*/)) {
-                Log.i(TAG,"Bluetooth getProfileProxy failed!");
+                Log.i(TAG, "Bluetooth getProfileProxy failed!");
             }
         }
         return BluetoothAdapter.getDefaultAdapter().startDiscovery();
     }
 
-    private void connected(BluetoothDevice device){
+    private void connected(BluetoothDevice device) {
         if (mService != null && device != null) {
             Log.e(TAG, "Connecting to target: " + device.getAddress());
             try {
@@ -205,33 +208,33 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setStep(int step){
-        if(stepView==null){
+    private void setStep(int step) {
+        if (stepView == null) {
             stepView = findViewById(R.id.v_state);
         }
         List<StepBean> stepsBeanList = new ArrayList<>();
-        if(step==1){
+        if (step == 1) {
             StepBean stepBean0 = new StepBean("准备", 0);
             StepBean stepBean1 = new StepBean("连接中", -1);
             StepBean stepBean2 = new StepBean("成功", -1);
             stepsBeanList.add(stepBean0);
             stepsBeanList.add(stepBean1);
             stepsBeanList.add(stepBean2);
-        }else if(step==2){
+        } else if (step == 2) {
             StepBean stepBean0 = new StepBean("准备", 1);
             StepBean stepBean1 = new StepBean("连接中", 0);
             StepBean stepBean2 = new StepBean("成功", -1);
             stepsBeanList.add(stepBean0);
             stepsBeanList.add(stepBean1);
             stepsBeanList.add(stepBean2);
-        }else if(step==3){
+        } else if (step == 3) {
             StepBean stepBean0 = new StepBean("准备", 1);
             StepBean stepBean1 = new StepBean("连接中", 1);
             StepBean stepBean2 = new StepBean("成功", 0);
             stepsBeanList.add(stepBean0);
             stepsBeanList.add(stepBean1);
             stepsBeanList.add(stepBean2);
-        }else {
+        } else {
             StepBean stepBean0 = new StepBean("准备", -1);
             StepBean stepBean1 = new StepBean("连接中", -1);
             StepBean stepBean2 = new StepBean("成功", -1);
@@ -248,6 +251,7 @@ public class MainActivity extends AppCompatActivity {
                 .setStepsViewIndicatorCompleteIcon(ContextCompat.getDrawable(this, R.drawable.step_compli))//设置StepsViewIndicator CompleteIcon
                 .setStepsViewIndicatorDefaultIcon(ContextCompat.getDrawable(this, R.drawable.point))//设置StepsViewIndicator DefaultIcon
                 .setStepsViewIndicatorAttentionIcon(ContextCompat.getDrawable(this, R.drawable.point));//设置StepsViewIndicator AttentionIcon
+        stepView.invalidate();
     }
 
     private void registerInputMethodMonitor() {
@@ -276,17 +280,17 @@ public class MainActivity extends AppCompatActivity {
                 }
             };
 
-    private void stopMyself(){
+    private void stopMyself() {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 finishAndRemoveTask();
             }
-        },2000);
+        }, 1000);
     }
 
-    private boolean isConnect(){
-        try{
+    private boolean isConnect() {
+        try {
             Method method = BluetoothAdapter.getDefaultAdapter().getClass().getDeclaredMethod("getConnectionState", (Class[]) null);
             method.setAccessible(true);
             int state = (int) method.invoke(BluetoothAdapter.getDefaultAdapter(), (Object[]) null);
@@ -301,11 +305,19 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    public static String getBTName(){
-        String s= ReflectUtils.reflect("android.os.SystemProperties").method("get","persist.sys.remotebt").get();
-        if(s!=null&&s.length()>0){
+    public static String getBTName() {
+        String s = ReflectUtils.reflect("android.os.SystemProperties").method("get", "persist.sys.remotebt").get();
+        if (s != null && s.length() > 0) {
             return s;
         }
         return BT_NAME_DEFAULT;
+    }
+
+    public static boolean isLegalRemote(String find) {
+        if (TextUtils.isEmpty(find)) {
+            return false;
+        }
+        String config = getBTName();
+        return config.contains(find);
     }
 }
