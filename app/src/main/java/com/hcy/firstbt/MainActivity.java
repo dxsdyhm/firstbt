@@ -10,11 +10,14 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.hardware.input.InputManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
@@ -61,12 +64,7 @@ public class MainActivity extends AppCompatActivity {
                     } else if (btDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
                         boolean isConnect = isConnect();
                         Log.i(TAG, "find " + btDevice.getName() + " isConnect :" + isConnect);
-                        if (!isConnect) {
-                            connect(btDevice);
-                        } else {
-                            setStep(3);
-                            stopMyself();
-                        }
+                        connect(btDevice);
                     } else {
                         Log.i(TAG, "find " + btDevice.getName() + " but state :" + btDevice.getBondState());
                         //connected(btDevice);
@@ -93,6 +91,16 @@ public class MainActivity extends AppCompatActivity {
             } else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)) {
                 Log.w(TAG, "ACTION_DISCOVERY_FINISHED");
                 BluetoothAdapter.getDefaultAdapter().startDiscovery();
+            }else if(action.equals(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)){
+                int state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, BluetoothAdapter.ERROR);
+                Log.i(TAG, "ACTION_CONNECTION_STATE_CHANGED:"+state);
+                if(state==BluetoothAdapter.STATE_CONNECTED){
+                    BluetoothDevice btDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    if(btDevice != null && btDevice.getName() != null && isLegalRemote(btDevice.getName())){
+                        setStep(3);
+                        stopMyself();
+                    }
+                }
             }
         }
     };
@@ -119,6 +127,41 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initUI();
+        setDefaultActivity();
+    }
+
+    private void setDefaultActivity() {
+        if(!setVlc()){
+            return;
+        }
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("android.intent.action.VIEW");
+        filter.addCategory("android.intent.category.DEFAULT");
+        try {
+            filter.addDataType("video/*");
+        } catch (IntentFilter.MalformedMimeTypeException e) {
+            e.printStackTrace();
+        }
+
+        PackageManager pm = getPackageManager();
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setType("video/*");
+        ResolveInfo info = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        if(info!=null&&"android".equals(info.activityInfo.packageName)){
+            List<ResolveInfo> list = new ArrayList<ResolveInfo>();
+            list = getPackageManager().queryIntentActivities(intent, 0);
+            final int N = list.size();
+            ComponentName[] set = new ComponentName[N];
+            int bestMatch = 0;
+            for (int i = 0; i < N; i++) {
+                ResolveInfo r = list.get(i);
+                set[i] = new ComponentName(r.activityInfo.packageName,
+                        r.activityInfo.name);
+                if (r.match > bestMatch) bestMatch = r.match;
+            }
+            ComponentName preActivity = new ComponentName("org.videolan.vlc", "org.videolan.vlc.StartActivity");
+            getPackageManager().addPreferredActivity(filter, bestMatch, set, preActivity);
+        }
     }
 
     private void initUI() {
@@ -139,6 +182,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         startScan();
+        setDefaultActivity();
     }
 
     @Override
@@ -161,12 +205,14 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        filter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
         filter.setPriority(Integer.MAX_VALUE);
         registerReceiver(remoteReceiver, filter);
     }
 
     @SuppressLint("MissingPermission")
     private boolean startScan() {
+
         BT_NAME = getBTName();
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
@@ -319,5 +365,10 @@ public class MainActivity extends AppCompatActivity {
         }
         String config = getBTName();
         return config.contains(find);
+    }
+
+    private boolean setVlc(){
+        String s = ReflectUtils.reflect("android.os.SystemProperties").method("get", "persist.sys.videovlc").get();
+        return "true".equals(s);
     }
 }
